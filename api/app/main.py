@@ -37,7 +37,14 @@ def on_startup():
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok"}
+    try:
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        db_status = "connected"
+    except Exception as e:
+        db_status = f"error: {e}"
+    return {"status": "ok", "db": db_status, "db_url_prefix": settings.database_url[:30]}
 
 
 app.include_router(auth_router.router, prefix="/api")
