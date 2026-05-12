@@ -46,11 +46,20 @@ def upsert_setting(item: SettingItem, db: Session = Depends(get_db)):
 
 
 @router.post("/webhook/test", dependencies=[Depends(get_current_admin)])
-def test_webhook(payload: WebhookTestPayload):
+def test_webhook(payload: WebhookTestPayload, db: Session = Depends(get_db)):
+    active = db.query(AppSetting).filter(AppSetting.key == "active_group").first()
+    active_val = (active.value if active and active.value else "1") or "1"
+    jid_row = db.query(AppSetting).filter(AppSetting.key == f"group{active_val}_jid").first()
+    label_row = db.query(AppSetting).filter(AppSetting.key == f"group{active_val}_label").first()
+    group_jid = jid_row.value if jid_row and jid_row.value else ""
+    group_label = label_row.value if label_row and label_row.value else f"Grupo {active_val}"
     try:
         with httpx.Client(timeout=15.0) as client:
-            r = client.post(payload.url, json={"message": payload.message, "test": True})
+            r = client.post(
+                payload.url,
+                json={"message": payload.message, "group_jid": group_jid, "group_label": group_label, "test": True},
+            )
             r.raise_for_status()
     except httpx.HTTPError as e:
         raise HTTPException(502, f"Falha: {e}")
-    return {"ok": True}
+    return {"ok": True, "group_jid": group_jid, "group_label": group_label}
