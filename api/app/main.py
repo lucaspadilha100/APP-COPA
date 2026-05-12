@@ -21,13 +21,18 @@ app.add_middleware(
 
 @app.on_event("startup")
 def on_startup():
-    Base.metadata.create_all(bind=engine)
-    db = SessionLocal()
     try:
-        ensure_default_admin(db)
-        seed_initial_data(db)
-    finally:
-        db.close()
+        Base.metadata.create_all(bind=engine)
+        db = SessionLocal()
+        try:
+            ensure_default_admin(db)
+            seed_initial_data(db)
+        finally:
+            db.close()
+    except Exception as exc:
+        import traceback
+        print(f"[startup] DB init error: {exc}")
+        traceback.print_exc()
 
 
 @app.get("/api/health")
