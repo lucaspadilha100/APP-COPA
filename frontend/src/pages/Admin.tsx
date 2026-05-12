@@ -383,12 +383,12 @@ function GameRow({
         </div>
         <input className="input w-full" placeholder="Adversário" value={edit.opponent || ""} onChange={(e) => setEdit({ ...edit, opponent: e.target.value })} />
         <div className="grid grid-cols-2 gap-2">
-          <select className="input" value={edit.match_date || ""} onChange={(e) => setEdit({ ...edit, match_date: e.target.value })}>
+          <select className="input min-w-0" value={edit.match_date || ""} onChange={(e) => setEdit({ ...edit, match_date: e.target.value })}>
             <option value="">Data</option>
             <option value="2026-05-16">16/05/2026</option>
             <option value="2026-05-17">17/05/2026</option>
           </select>
-          <input className="input" type="time" value={edit.match_time || ""} onChange={(e) => setEdit({ ...edit, match_time: e.target.value })} />
+          <input className="input min-w-0 !px-2" type="time" value={edit.match_time || ""} onChange={(e) => setEdit({ ...edit, match_time: e.target.value })} />
         </div>
         <input className="input w-full" placeholder="Local" value={edit.venue || ""} onChange={(e) => setEdit({ ...edit, venue: e.target.value })} />
         <div className="flex items-center gap-2">
@@ -434,6 +434,15 @@ function GameRow({
   );
 }
 
+const SWIM_DISTANCES = ["50m", "100m", "400m", "Revezamento 4x50 misto"];
+const HEAT_OPTIONS = Array.from({ length: 10 }, (_, i) => `Bateria ${i + 1}`);
+
+function sortSwimByTime(a: SwimEvent, b: SwimEvent) {
+  const da = new Date(`${a.match_date || "9999-12-31"}T${a.match_time || "00:00"}`).getTime();
+  const db = new Date(`${b.match_date || "9999-12-31"}T${b.match_time || "00:00"}`).getTime();
+  return da - db;
+}
+
 function SwimAdmin({
   modalities,
   events,
@@ -447,6 +456,7 @@ function SwimAdmin({
 }) {
   const swimMod = modalities[0];
   const phases = swimMod?.phases.split(",").map((p) => p.trim()) || ["Eliminatória", "Semifinal", "Final"];
+  const [filterDist, setFilterDist] = useState<string | "all">("all");
   const [form, setForm] = useState<Partial<SwimEvent>>({
     modality_id: swimMod?.id,
     distance: "50m",
@@ -481,8 +491,11 @@ function SwimAdmin({
     });
     return Object.keys(map)
       .sort((a, b) => order(a) - order(b))
-      .map((dist) => ({ dist, events: map[dist] }));
-  }, [events]);
+      .map((dist) => ({ dist, events: map[dist].slice().sort(sortSwimByTime) }))
+      .filter(({ dist }) => filterDist === "all" || filterDist === dist);
+  }, [events, filterDist]);
+
+  const totalVisible = byDistance.reduce((n, g) => n + g.events.length, 0);
 
   return (
     <div className="flex flex-col-reverse lg:grid lg:grid-cols-[360px_1fr] gap-6">
@@ -492,15 +505,12 @@ function SwimAdmin({
           <div>
             <label className="label">Prova</label>
             <select className="input" value={form.distance} onChange={(e) => setForm({ ...form, distance: e.target.value })}>
-              <option>50m</option>
-              <option>100m</option>
-              <option>400m</option>
-              <option>Revezamento 4x50 misto</option>
+              {SWIM_DISTANCES.map((d) => <option key={d}>{d}</option>)}
             </select>
           </div>
           <div>
             <label className="label">Atleta</label>
-            <input className="input" value={form.athlete || ""} onChange={(e) => setForm({ ...form, athlete: e.target.value })} required />
+            <input className="input" placeholder="Nome do(a) atleta" value={form.athlete || ""} onChange={(e) => setForm({ ...form, athlete: e.target.value })} required />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
@@ -511,17 +521,23 @@ function SwimAdmin({
             </div>
             <div>
               <label className="label">Bateria</label>
-              <input className="input" value={form.heat || ""} onChange={(e) => setForm({ ...form, heat: e.target.value })} />
+              <select className="input" value={form.heat || ""} onChange={(e) => setForm({ ...form, heat: e.target.value })}>
+                {HEAT_OPTIONS.map((h) => <option key={h}>{h}</option>)}
+              </select>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="label">Data</label>
-              <input className="input" type="date" value={form.match_date || ""} onChange={(e) => setForm({ ...form, match_date: e.target.value })} />
+              <select className="input" value={form.match_date || ""} onChange={(e) => setForm({ ...form, match_date: e.target.value })}>
+                <option value="">Selecione</option>
+                <option value="2026-05-16">16/05/2026</option>
+                <option value="2026-05-17">17/05/2026</option>
+              </select>
             </div>
             <div>
               <label className="label">Horário</label>
-              <input className="input" type="time" value={form.match_time || ""} onChange={(e) => setForm({ ...form, match_time: e.target.value })} />
+              <input className="input min-w-0 !px-2" type="time" value={form.match_time || ""} onChange={(e) => setForm({ ...form, match_time: e.target.value })} />
             </div>
           </div>
           <button className="btn-primary w-full">Criar prova</button>
@@ -529,9 +545,37 @@ function SwimAdmin({
       </div>
 
       <div>
-        {events.length === 0 && (
-          <div className="card p-6 text-center text-sm text-slate-400">Nenhuma prova ainda.</div>
+        {/* Filtro por distância */}
+        <div className="flex flex-wrap gap-2 mb-5">
+          <button
+            onClick={() => setFilterDist("all")}
+            className={`px-3 py-1 rounded-full text-xs font-semibold ${
+              filterDist === "all" ? "bg-brand-700 text-white" : "bg-white border border-slate-200 text-slate-600"
+            }`}
+          >
+            Todas ({events.length})
+          </button>
+          {SWIM_DISTANCES.map((d) => {
+            const count = events.filter((e) => e.distance === d).length;
+            if (count === 0) return null;
+            return (
+              <button
+                key={d}
+                onClick={() => setFilterDist(d)}
+                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  filterDist === d ? "bg-brand-700 text-white" : "bg-white border border-slate-200 text-slate-600"
+                }`}
+              >
+                🏊 {d} ({count})
+              </button>
+            );
+          })}
+        </div>
+
+        {totalVisible === 0 && (
+          <div className="card p-6 text-center text-sm text-slate-400">Nenhuma prova cadastrada ainda.</div>
         )}
+
         <div className="space-y-8">
           {byDistance.map(({ dist, events: dEvents }) => (
             <div key={dist}>
@@ -593,33 +637,83 @@ function SwimRow({
     await onChange();
   }
 
+  const statusColor =
+    event.status === "finished"
+      ? "border-l-4 border-l-emerald-400"
+      : event.status === "live"
+      ? "border-l-4 border-l-red-400"
+      : "border-l-4 border-l-slate-200";
+
   return (
-    <div className="card p-4">
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
-        <select className="input" value={edit.distance} onChange={(e) => setEdit({ ...edit, distance: e.target.value })}>
-          <option>50m</option><option>100m</option><option>400m</option><option>Revezamento 4x50 misto</option>
-        </select>
-        <input className="input col-span-1 md:col-span-2" placeholder="Atleta" value={edit.athlete || ""} onChange={(e) => setEdit({ ...edit, athlete: e.target.value })} />
-        <select className="input" value={edit.phase} onChange={(e) => setEdit({ ...edit, phase: e.target.value })}>
-          {phases.map((p) => <option key={p}>{p}</option>)}
-        </select>
-        <input className="input" placeholder="Bateria" value={edit.heat || ""} onChange={(e) => setEdit({ ...edit, heat: e.target.value })} />
-        <select className="input" value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value as any })}>
-          <option value="scheduled">Agendado</option>
-          <option value="live">Ao vivo</option>
-          <option value="finished">Encerrado</option>
-        </select>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mt-2">
-        <input className="input" type="date" value={edit.match_date || ""} onChange={(e) => setEdit({ ...edit, match_date: e.target.value })} />
-        <input className="input" type="time" value={edit.match_time || ""} onChange={(e) => setEdit({ ...edit, match_time: e.target.value })} />
-        <input className="input md:col-span-2" placeholder="Tempo (ex: 00:55.21)" value={edit.result_time || ""} onChange={(e) => setEdit({ ...edit, result_time: e.target.value })} />
-        <label className="flex items-center gap-2 text-sm col-span-1">
+    <div className={`card p-4 ${statusColor}`}>
+      {/* ── Layout mobile ── */}
+      <div className="md:hidden space-y-2">
+        <div className="grid grid-cols-2 gap-2">
+          <select className="input min-w-0" value={edit.distance} onChange={(e) => setEdit({ ...edit, distance: e.target.value })}>
+            {SWIM_DISTANCES.map((d) => <option key={d}>{d}</option>)}
+          </select>
+          <select className="input min-w-0" value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value as any })}>
+            <option value="scheduled">Agendado</option>
+            <option value="live">Ao vivo</option>
+            <option value="finished">Encerrado</option>
+          </select>
+        </div>
+        <input className="input w-full" placeholder="Atleta" value={edit.athlete || ""} onChange={(e) => setEdit({ ...edit, athlete: e.target.value })} />
+        <div className="grid grid-cols-2 gap-2">
+          <select className="input min-w-0" value={edit.phase} onChange={(e) => setEdit({ ...edit, phase: e.target.value })}>
+            {phases.map((p) => <option key={p}>{p}</option>)}
+          </select>
+          <select className="input min-w-0" value={edit.heat || ""} onChange={(e) => setEdit({ ...edit, heat: e.target.value })}>
+            {HEAT_OPTIONS.map((h) => <option key={h}>{h}</option>)}
+          </select>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <select className="input min-w-0" value={edit.match_date || ""} onChange={(e) => setEdit({ ...edit, match_date: e.target.value })}>
+            <option value="">Data</option>
+            <option value="2026-05-16">16/05/2026</option>
+            <option value="2026-05-17">17/05/2026</option>
+          </select>
+          <input className="input min-w-0 !px-2" type="time" value={edit.match_time || ""} onChange={(e) => setEdit({ ...edit, match_time: e.target.value })} />
+        </div>
+        <input className="input w-full" placeholder="Tempo (ex: 00:55.21)" value={edit.result_time || ""} onChange={(e) => setEdit({ ...edit, result_time: e.target.value })} />
+        <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={!!edit.qualified} onChange={(e) => setEdit({ ...edit, qualified: e.target.checked })} />
           Classificado
         </label>
-        <input className="input" placeholder="Notas" value={edit.notes || ""} onChange={(e) => setEdit({ ...edit, notes: e.target.value })} />
+        <input className="input w-full" placeholder="Notas" value={edit.notes || ""} onChange={(e) => setEdit({ ...edit, notes: e.target.value })} />
       </div>
+
+      {/* ── Layout desktop ── */}
+      <div className="hidden md:block space-y-2">
+        <div className="grid grid-cols-6 gap-2">
+          <select className="input" value={edit.distance} onChange={(e) => setEdit({ ...edit, distance: e.target.value })}>
+            {SWIM_DISTANCES.map((d) => <option key={d}>{d}</option>)}
+          </select>
+          <input className="input col-span-2" placeholder="Atleta" value={edit.athlete || ""} onChange={(e) => setEdit({ ...edit, athlete: e.target.value })} />
+          <select className="input" value={edit.phase} onChange={(e) => setEdit({ ...edit, phase: e.target.value })}>
+            {phases.map((p) => <option key={p}>{p}</option>)}
+          </select>
+          <select className="input" value={edit.heat || ""} onChange={(e) => setEdit({ ...edit, heat: e.target.value })}>
+            {HEAT_OPTIONS.map((h) => <option key={h}>{h}</option>)}
+          </select>
+          <select className="input" value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value as any })}>
+            <option value="scheduled">Agendado</option>
+            <option value="live">Ao vivo</option>
+            <option value="finished">Encerrado</option>
+          </select>
+        </div>
+        <div className="grid grid-cols-6 gap-2">
+          <input className="input" type="date" value={edit.match_date || ""} onChange={(e) => setEdit({ ...edit, match_date: e.target.value })} />
+          <input className="input" type="time" value={edit.match_time || ""} onChange={(e) => setEdit({ ...edit, match_time: e.target.value })} />
+          <input className="input col-span-2" placeholder="Tempo (ex: 00:55.21)" value={edit.result_time || ""} onChange={(e) => setEdit({ ...edit, result_time: e.target.value })} />
+          <label className="flex items-center gap-2 text-sm col-span-1">
+            <input type="checkbox" checked={!!edit.qualified} onChange={(e) => setEdit({ ...edit, qualified: e.target.checked })} />
+            Classificado
+          </label>
+          <input className="input" placeholder="Notas" value={edit.notes || ""} onChange={(e) => setEdit({ ...edit, notes: e.target.value })} />
+        </div>
+      </div>
+
       <div className="mt-3 flex gap-2 flex-wrap">
         <button onClick={save} disabled={busy} className="btn-primary">Salvar</button>
         <button onClick={notify} disabled={busy} className="btn-accent">📤 Disparar webhook</button>
