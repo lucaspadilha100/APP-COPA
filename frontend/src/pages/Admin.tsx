@@ -369,75 +369,60 @@ function GameRow({
         )}
       </div>
 
-      {/* Linha 1: fase · adversário · data · hora · status */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
-        <select
-          className="input col-span-1"
-          value={edit.phase}
-          onChange={(e) => setEdit({ ...edit, phase: e.target.value })}
-        >
-          {phases.map((p) => <option key={p}>{p}</option>)}
-        </select>
-        <input
-          className="input col-span-1 md:col-span-2"
-          placeholder="Adversário"
-          value={edit.opponent || ""}
-          onChange={(e) => setEdit({ ...edit, opponent: e.target.value })}
-        />
-        <input
-          className="input"
-          type="date"
-          value={edit.match_date || ""}
-          onChange={(e) => setEdit({ ...edit, match_date: e.target.value })}
-        />
-        <input
-          className="input"
-          type="time"
-          value={edit.match_time || ""}
-          onChange={(e) => setEdit({ ...edit, match_time: e.target.value })}
-        />
-        <select
-          className="input"
-          value={edit.status}
-          onChange={(e) => setEdit({ ...edit, status: e.target.value as any })}
-        >
-          <option value="scheduled">Agendado</option>
-          <option value="live">Ao vivo</option>
-          <option value="finished">Encerrado</option>
-        </select>
+      {/* ── Layout mobile ── */}
+      <div className="md:hidden space-y-2">
+        <div className="grid grid-cols-2 gap-2">
+          <select className="input" value={edit.phase} onChange={(e) => setEdit({ ...edit, phase: e.target.value })}>
+            {phases.map((p) => <option key={p}>{p}</option>)}
+          </select>
+          <select className="input" value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value as any })}>
+            <option value="scheduled">Agendado</option>
+            <option value="live">Ao vivo</option>
+            <option value="finished">Encerrado</option>
+          </select>
+        </div>
+        <input className="input w-full" placeholder="Adversário" value={edit.opponent || ""} onChange={(e) => setEdit({ ...edit, opponent: e.target.value })} />
+        <div className="grid grid-cols-2 gap-2">
+          <select className="input" value={edit.match_date || ""} onChange={(e) => setEdit({ ...edit, match_date: e.target.value })}>
+            <option value="">Data</option>
+            <option value="2026-05-16">16/05/2026</option>
+            <option value="2026-05-17">17/05/2026</option>
+          </select>
+          <input className="input" type="time" value={edit.match_time || ""} onChange={(e) => setEdit({ ...edit, match_time: e.target.value })} />
+        </div>
+        <input className="input w-full" placeholder="Local" value={edit.venue || ""} onChange={(e) => setEdit({ ...edit, venue: e.target.value })} />
+        <div className="flex items-center gap-2">
+          <input className="input w-16 shrink-0" type="number" placeholder="Nós" value={edit.home_score ?? ""} onChange={(e) => setEdit({ ...edit, home_score: e.target.value === "" ? null : Number(e.target.value) })} />
+          <span className="text-slate-400 font-bold shrink-0">×</span>
+          <input className="input w-16 shrink-0" type="number" placeholder="Eles" value={edit.away_score ?? ""} onChange={(e) => setEdit({ ...edit, away_score: e.target.value === "" ? null : Number(e.target.value) })} />
+          <input className="input flex-1 min-w-0" placeholder="Observação" value={edit.notes || ""} onChange={(e) => setEdit({ ...edit, notes: e.target.value })} />
+        </div>
       </div>
 
-      {/* Linha 2: local · placar · observação */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mt-2">
-        <input
-          className="input col-span-1 md:col-span-2"
-          placeholder="Local"
-          value={edit.venue || ""}
-          onChange={(e) => setEdit({ ...edit, venue: e.target.value })}
-        />
-        <div className="flex items-center gap-2 col-span-1 md:col-span-2">
-          <input
-            className="input"
-            type="number"
-            placeholder="Nós"
-            value={edit.home_score ?? ""}
-            onChange={(e) => setEdit({ ...edit, home_score: e.target.value === "" ? null : Number(e.target.value) })}
-          />
-          <span className="text-slate-400 font-bold">×</span>
-          <input
-            className="input"
-            type="number"
-            placeholder="Eles"
-            value={edit.away_score ?? ""}
-            onChange={(e) => setEdit({ ...edit, away_score: e.target.value === "" ? null : Number(e.target.value) })}
-          />
+      {/* ── Layout desktop ── */}
+      <div className="hidden md:block space-y-2">
+        <div className="grid grid-cols-6 gap-2">
+          <select className="input" value={edit.phase} onChange={(e) => setEdit({ ...edit, phase: e.target.value })}>
+            {phases.map((p) => <option key={p}>{p}</option>)}
+          </select>
+          <input className="input col-span-2" placeholder="Adversário" value={edit.opponent || ""} onChange={(e) => setEdit({ ...edit, opponent: e.target.value })} />
+          <input className="input" type="date" value={edit.match_date || ""} onChange={(e) => setEdit({ ...edit, match_date: e.target.value })} />
+          <input className="input" type="time" value={edit.match_time || ""} onChange={(e) => setEdit({ ...edit, match_time: e.target.value })} />
+          <select className="input" value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value as any })}>
+            <option value="scheduled">Agendado</option>
+            <option value="live">Ao vivo</option>
+            <option value="finished">Encerrado</option>
+          </select>
         </div>
-        <input
-          className="input col-span-2"
-          placeholder="Observação"
-          value={edit.notes || ""}
-          onChange={(e) => setEdit({ ...edit, notes: e.target.value })}
-        />
+        <div className="grid grid-cols-6 gap-2">
+          <input className="input col-span-2" placeholder="Local" value={edit.venue || ""} onChange={(e) => setEdit({ ...edit, venue: e.target.value })} />
+          <div className="flex items-center gap-2 col-span-2">
+            <input className="input" type="number" placeholder="Nós" value={edit.home_score ?? ""} onChange={(e) => setEdit({ ...edit, home_score: e.target.value === "" ? null : Number(e.target.value) })} />
+            <span className="text-slate-400 font-bold">×</span>
+            <input className="input" type="number" placeholder="Eles" value={edit.away_score ?? ""} onChange={(e) => setEdit({ ...edit, away_score: e.target.value === "" ? null : Number(e.target.value) })} />
+          </div>
+          <input className="input col-span-2" placeholder="Observação" value={edit.notes || ""} onChange={(e) => setEdit({ ...edit, notes: e.target.value })} />
+        </div>
       </div>
 
       <div className="mt-3 flex gap-2 flex-wrap">
