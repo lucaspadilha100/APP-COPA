@@ -71,7 +71,7 @@ export default function App() {
             <div className="text-gold-700 font-semibold">Segue-Me ✝</div>
           </div>
           <div className="text-[11px] text-slate-400 text-center">
-            Desenvolvido por <span className="font-semibold text-slate-600">Lucas Padilha</span> · <a href="https://automic.tech" target="_blank" rel="noopener noreferrer" className="hover:text-brand-700 underline-offset-2 hover:underline">Automic.tech</a>
+            Desenvolvido por <span className="font-semibold text-slate-600">Lucas Padilha</span> · <a href="https://instagram.com/automic.tech" target="_blank" rel="noopener noreferrer" className="hover:text-brand-700 underline-offset-2 hover:underline">Automic.tech</a>
           </div>
         </div>
       </footer>
