@@ -149,9 +149,9 @@ function GamesAdmin({
   const totalVisible = grouped.reduce((n, g) => n + g.games.length, 0);
 
   return (
-    <div className="grid lg:grid-cols-[360px_1fr] gap-6">
+    <div className="flex flex-col-reverse lg:grid lg:grid-cols-[360px_1fr] gap-6">
       {/* ── Formulário novo jogo ── */}
-      <div className="card p-5 h-fit sticky top-4">
+      <div className="card p-5 h-fit lg:sticky lg:top-4">
         <h3 className="font-bold mb-3">Novo jogo</h3>
         <form onSubmit={submit} className="space-y-3">
           <div>
@@ -500,8 +500,8 @@ function SwimAdmin({
   }, [events]);
 
   return (
-    <div className="grid lg:grid-cols-[360px_1fr] gap-6">
-      <div className="card p-5 h-fit sticky top-4">
+    <div className="flex flex-col-reverse lg:grid lg:grid-cols-[360px_1fr] gap-6">
+      <div className="card p-5 h-fit lg:sticky lg:top-4">
         <h3 className="font-bold mb-3">Nova prova</h3>
         <form onSubmit={submit} className="space-y-3">
           <div>
