@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.db
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+frontend/dist/
+.vite/
+
+# Editors
+.vscode/
+.idea/
+.DS_Store
+
+# Vercel
+.vercel/
