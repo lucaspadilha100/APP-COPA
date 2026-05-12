@@ -40,6 +40,17 @@ export default function Home() {
       .slice(0, 3);
   }, [games]);
 
+  const lastResults = useMemo(() => {
+    return [...games]
+      .filter((g) => g.status === "finished" && g.match_date && g.home_score !== null && g.away_score !== null)
+      .sort((a, b) => {
+        const da = new Date(`${a.match_date}T${a.match_time || "00:00"}`).getTime();
+        const db = new Date(`${b.match_date}T${b.match_time || "00:00"}`).getTime();
+        return db - da;
+      })
+      .slice(0, 3);
+  }, [games]);
+
   const filteredMods = activeMod === "all" ? modalities : modalities.filter((m) => m.id === activeMod);
 
   if (loading) {
@@ -56,6 +67,20 @@ export default function Home() {
           </h2>
           <div className="grid md:grid-cols-3 gap-4">
             {next.map((g) => (
+              <GameCard key={g.id} game={g} teamName={teamName} compact />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {lastResults.length > 0 && (
+        <section>
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <span className="inline-block w-1.5 h-6 bg-emerald-500 rounded-full" />
+            Últimos resultados
+          </h2>
+          <div className="grid md:grid-cols-3 gap-4">
+            {lastResults.map((g) => (
               <GameCard key={g.id} game={g} teamName={teamName} compact />
             ))}
           </div>
@@ -98,6 +123,19 @@ export default function Home() {
             const mSwim = swim.filter((s) => s.modality_id === m.id);
             const empty = isSwim ? mSwim.length === 0 : mGames.length === 0;
 
+            const swimByDistance = isSwim
+              ? mSwim.reduce<Record<string, SwimEvent[]>>((acc, s) => {
+                  const key = s.distance || "—";
+                  (acc[key] = acc[key] || []).push(s);
+                  return acc;
+                }, {})
+              : {};
+
+            const distanceOrder = (d: string) => {
+              const num = parseInt(d.replace(/\D/g, ""), 10);
+              return isNaN(num) ? 9999 : num;
+            };
+
             return (
               <div key={m.id}>
                 <div className="flex items-center gap-2 mb-3">
@@ -110,10 +148,23 @@ export default function Home() {
                     Nenhum jogo cadastrado ainda.
                   </div>
                 ) : isSwim ? (
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {mSwim.map((s) => (
-                      <SwimCard key={s.id} event={s} />
-                    ))}
+                  <div className="space-y-6">
+                    {Object.keys(swimByDistance)
+                      .sort((a, b) => distanceOrder(a) - distanceOrder(b))
+                      .map((dist) => (
+                        <div key={dist}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="inline-block w-1 h-5 bg-brand-400 rounded-full" />
+                            <h4 className="text-sm font-bold text-brand-700 uppercase tracking-wider">{dist}</h4>
+                            <span className="text-xs text-slate-400">({swimByDistance[dist].length} provas)</span>
+                          </div>
+                          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {swimByDistance[dist].map((s) => (
+                              <SwimCard key={s.id} event={s} />
+                            ))}
+                          </div>
+                        </div>
+                      ))}
                   </div>
                 ) : (
                   <div className="grid md:grid-cols-2 gap-4">

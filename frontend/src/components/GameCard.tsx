@@ -33,8 +33,16 @@ export default function GameCard({
   const lose = showScore && we < them;
   const draw = showScore && we === them;
 
+  const resultBg = win
+    ? "bg-emerald-50/80 ring-1 ring-emerald-200"
+    : lose
+    ? "bg-rose-50/80 ring-1 ring-rose-200"
+    : draw
+    ? "bg-amber-50/80 ring-1 ring-amber-200"
+    : "";
+
   return (
-    <div className={`card p-4 ${compact ? "" : "md:p-5"}`}>
+    <div className={`card p-4 ${compact ? "" : "md:p-5"} ${resultBg}`}>
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-bold uppercase tracking-wider text-brand-700">{game.phase}</span>
         <span className={s.cls}>{s.text}</span>
@@ -46,13 +54,15 @@ export default function GameCard({
         </div>
         <div className="text-center min-w-[80px]">
           {showScore ? (
-            <div className={`font-display text-3xl font-extrabold ${win ? "text-brand-700" : lose ? "text-crimson-600" : "text-slate-700"}`}>
+            <div className={`font-display text-3xl font-extrabold ${win ? "text-emerald-700" : lose ? "text-rose-700" : "text-amber-700"}`}>
               {we} <span className="text-slate-300">×</span> {them}
             </div>
           ) : (
             <div className="text-slate-400 font-display text-2xl font-bold">vs</div>
           )}
-          {draw && <div className="text-[10px] uppercase tracking-wider text-slate-500">Empate</div>}
+          {win && <div className="text-[10px] uppercase tracking-wider text-emerald-700 font-bold">Vitória</div>}
+          {lose && <div className="text-[10px] uppercase tracking-wider text-rose-700 font-bold">Derrota</div>}
+          {draw && <div className="text-[10px] uppercase tracking-wider text-amber-700 font-bold">Empate</div>}
         </div>
         <div className="text-left">
           <div className="font-bold text-slate-900 leading-tight">{game.opponent}</div>

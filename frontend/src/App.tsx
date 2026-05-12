@@ -27,7 +27,7 @@ export default function App() {
                 Paróquia São Mateus Moreira
               </div>
               <div className="font-display text-xl md:text-2xl font-extrabold leading-tight">
-                Copa <span className="text-gold-300">Moreirão</span>
+                Torcida <span className="text-gold-300">Moreirão</span>
               </div>
             </div>
           </Link>
@@ -51,7 +51,7 @@ export default function App() {
         {isHome && (
           <div className="relative max-w-6xl mx-auto px-4 pb-10 pt-2 text-white">
             <h1 className="font-display text-3xl md:text-5xl font-extrabold drop-shadow">
-              A Copa do <span className="text-gold-300">Moreirão</span> está rolando!
+              Copa <span className="text-gold-300">Segue-Me 2026</span> está rolando!
             </h1>
             <p className="mt-2 text-white/80 max-w-2xl">
               Acompanhe os jogos, horários e resultados de todas as modalidades em que estamos disputando.
