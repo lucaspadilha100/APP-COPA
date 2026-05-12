@@ -197,12 +197,15 @@ function GamesAdmin({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="label">Data</label>
-              <input
+              <select
                 className="input"
-                type="date"
                 value={form.match_date || ""}
                 onChange={(e) => setForm({ ...form, match_date: e.target.value })}
-              />
+              >
+                <option value="">Selecione</option>
+                <option value="2026-05-16">16/05/2026 (sáb)</option>
+                <option value="2026-05-17">17/05/2026 (dom)</option>
+              </select>
             </div>
             <div>
               <label className="label">Horário</label>
