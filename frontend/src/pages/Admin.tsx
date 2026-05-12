@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api, Game, Modality, SwimEvent } from "../lib/api";
 
 type Tab = "games" | "swim" | "settings";
@@ -97,6 +97,12 @@ function Tabs({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   );
 }
 
+function sortByDateTime(a: Game, b: Game) {
+  const da = new Date(`${a.match_date || "9999-12-31"}T${a.match_time || "00:00"}`).getTime();
+  const db = new Date(`${b.match_date || "9999-12-31"}T${b.match_time || "00:00"}`).getTime();
+  return da - db;
+}
+
 function GamesAdmin({
   modalities,
   games,
@@ -108,11 +114,13 @@ function GamesAdmin({
   onChange: () => Promise<void>;
   flash: (m: string) => void;
 }) {
+  const [filterMod, setFilterMod] = useState<number | "all">("all");
   const [form, setForm] = useState<Partial<Game>>({
     modality_id: modalities[0]?.id,
     phase: modalities[0]?.phases.split(",")[0] || "Grupos",
     opponent: "",
     status: "scheduled",
+    venue: "UNI-RN",
   });
 
   const activeMod = modalities.find((m) => m.id === form.modality_id);
@@ -127,8 +135,22 @@ function GamesAdmin({
     await onChange();
   }
 
+  const grouped = useMemo(() => {
+    return modalities
+      .map((m) => ({
+        modality: m,
+        games: games
+          .filter((g) => g.modality_id === m.id && (filterMod === "all" || filterMod === m.id))
+          .sort(sortByDateTime),
+      }))
+      .filter((g) => g.games.length > 0);
+  }, [modalities, games, filterMod]);
+
+  const totalVisible = grouped.reduce((n, g) => n + g.games.length, 0);
+
   return (
-    <div className="grid lg:grid-cols-[380px_1fr] gap-6">
+    <div className="grid lg:grid-cols-[360px_1fr] gap-6">
+      {/* ── Formulário novo jogo ── */}
       <div className="card p-5 h-fit sticky top-4">
         <h3 className="font-bold mb-3">Novo jogo</h3>
         <form onSubmit={submit} className="space-y-3">
@@ -137,7 +159,15 @@ function GamesAdmin({
             <select
               className="input"
               value={form.modality_id}
-              onChange={(e) => setForm({ ...form, modality_id: Number(e.target.value) })}
+              onChange={(e) => {
+                const id = Number(e.target.value);
+                const mod = modalities.find((m) => m.id === id);
+                setForm({
+                  ...form,
+                  modality_id: id,
+                  phase: mod?.phases.split(",")[0] || "Grupos",
+                });
+              }}
             >
               {modalities.map((m) => (
                 <option key={m.id} value={m.id}>{m.icon} {m.name}</option>
@@ -151,13 +181,14 @@ function GamesAdmin({
               value={form.phase}
               onChange={(e) => setForm({ ...form, phase: e.target.value })}
             >
-              {phases.map((p) => <option key={p}>{p}</option>)}
+              {phases.map((p) => <option key={p}>{p.trim()}</option>)}
             </select>
           </div>
           <div>
             <label className="label">Adversário</label>
             <input
               className="input"
+              placeholder="Nome do time adversário"
               value={form.opponent || ""}
               onChange={(e) => setForm({ ...form, opponent: e.target.value })}
               required
@@ -195,15 +226,57 @@ function GamesAdmin({
         </form>
       </div>
 
-      <div className="space-y-3">
-        {games.length === 0 && (
-          <div className="card p-6 text-center text-sm text-slate-400">Nenhum jogo ainda.</div>
+      {/* ── Lista de jogos ── */}
+      <div>
+        {/* Filtro por modalidade */}
+        <div className="flex flex-wrap gap-2 mb-5">
+          <button
+            onClick={() => setFilterMod("all")}
+            className={`px-3 py-1 rounded-full text-xs font-semibold ${
+              filterMod === "all" ? "bg-brand-700 text-white" : "bg-white border border-slate-200 text-slate-600"
+            }`}
+          >
+            Todas ({games.length})
+          </button>
+          {modalities.map((m) => {
+            const count = games.filter((g) => g.modality_id === m.id).length;
+            return (
+              <button
+                key={m.id}
+                onClick={() => setFilterMod(m.id)}
+                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  filterMod === m.id ? "bg-brand-700 text-white" : "bg-white border border-slate-200 text-slate-600"
+                }`}
+              >
+                {m.icon} {m.name} ({count})
+              </button>
+            );
+          })}
+        </div>
+
+        {totalVisible === 0 && (
+          <div className="card p-6 text-center text-sm text-slate-400">Nenhum jogo cadastrado ainda.</div>
         )}
-        {games.map((g) => {
-          const m = modalities.find((mm) => mm.id === g.modality_id);
-          if (!m) return null;
-          return <GameRow key={g.id} game={g} modality={m} onChange={onChange} flash={flash} />;
-        })}
+
+        {/* Grupos por modalidade */}
+        <div className="space-y-8">
+          {grouped.map(({ modality, games: mGames }) => (
+            <div key={modality.id}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xl">{modality.icon}</span>
+                <h3 className="font-bold text-base">{modality.name}</h3>
+                <span className="text-xs text-slate-400 bg-slate-100 rounded-full px-2 py-0.5">
+                  {mGames.length} jogo{mGames.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+              <div className="space-y-3">
+                {mGames.map((g) => (
+                  <GameRow key={g.id} game={g} modality={modality} onChange={onChange} flash={flash} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -222,7 +295,14 @@ function GameRow({
 }) {
   const [edit, setEdit] = useState<Partial<Game>>(game);
   const [busy, setBusy] = useState(false);
-  const phases = modality.phases.split(",");
+  const phases = modality.phases.split(",").map((p) => p.trim());
+
+  const statusColor =
+    game.status === "finished"
+      ? "border-l-4 border-l-emerald-400"
+      : game.status === "live"
+      ? "border-l-4 border-l-red-400"
+      : "border-l-4 border-l-slate-200";
 
   async function save() {
     setBusy(true);
@@ -267,37 +347,96 @@ function GameRow({
   }
 
   return (
-    <div className="card p-4">
-      <div className="flex items-center justify-between mb-2">
-        <div className="font-bold">{modality.icon} {modality.name}</div>
+    <div className={`card p-4 ${statusColor}`}>
+      <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+        <div className="flex items-center gap-2 text-sm text-slate-600">
+          {game.match_date && (
+            <span className="font-semibold">
+              {new Date(`${game.match_date}T${game.match_time || "00:00"}`).toLocaleDateString("pt-BR", {
+                weekday: "short", day: "2-digit", month: "2-digit",
+              })}
+              {game.match_time && ` · ${game.match_time}`}
+            </span>
+          )}
+        </div>
         {game.notified_at && (
           <span className="text-[10px] text-brand-700 uppercase font-semibold">
             ✓ Notificado {new Date(game.notified_at).toLocaleString("pt-BR")}
           </span>
         )}
       </div>
-      <div className="grid md:grid-cols-6 gap-2">
-        <select className="input md:col-span-1" value={edit.phase} onChange={(e) => setEdit({ ...edit, phase: e.target.value })}>
+
+      {/* Linha 1: fase · adversário · data · hora · status */}
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+        <select
+          className="input col-span-1"
+          value={edit.phase}
+          onChange={(e) => setEdit({ ...edit, phase: e.target.value })}
+        >
           {phases.map((p) => <option key={p}>{p}</option>)}
         </select>
-        <input className="input md:col-span-2" placeholder="Adversário" value={edit.opponent || ""} onChange={(e) => setEdit({ ...edit, opponent: e.target.value })} />
-        <input className="input" type="date" value={edit.match_date || ""} onChange={(e) => setEdit({ ...edit, match_date: e.target.value })} />
-        <input className="input" type="time" value={edit.match_time || ""} onChange={(e) => setEdit({ ...edit, match_time: e.target.value })} />
-        <select className="input" value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value as any })}>
+        <input
+          className="input col-span-1 md:col-span-2"
+          placeholder="Adversário"
+          value={edit.opponent || ""}
+          onChange={(e) => setEdit({ ...edit, opponent: e.target.value })}
+        />
+        <input
+          className="input"
+          type="date"
+          value={edit.match_date || ""}
+          onChange={(e) => setEdit({ ...edit, match_date: e.target.value })}
+        />
+        <input
+          className="input"
+          type="time"
+          value={edit.match_time || ""}
+          onChange={(e) => setEdit({ ...edit, match_time: e.target.value })}
+        />
+        <select
+          className="input"
+          value={edit.status}
+          onChange={(e) => setEdit({ ...edit, status: e.target.value as any })}
+        >
           <option value="scheduled">Agendado</option>
           <option value="live">Ao vivo</option>
           <option value="finished">Encerrado</option>
         </select>
       </div>
-      <div className="grid md:grid-cols-6 gap-2 mt-2">
-        <input className="input md:col-span-2" placeholder="Local" value={edit.venue || ""} onChange={(e) => setEdit({ ...edit, venue: e.target.value })} />
-        <div className="flex items-center gap-2 md:col-span-2">
-          <input className="input" type="number" placeholder="Nós" value={edit.home_score ?? ""} onChange={(e) => setEdit({ ...edit, home_score: e.target.value === "" ? null : Number(e.target.value) })} />
-          <span className="text-slate-400">x</span>
-          <input className="input" type="number" placeholder="Eles" value={edit.away_score ?? ""} onChange={(e) => setEdit({ ...edit, away_score: e.target.value === "" ? null : Number(e.target.value) })} />
+
+      {/* Linha 2: local · placar · observação */}
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mt-2">
+        <input
+          className="input col-span-1 md:col-span-2"
+          placeholder="Local"
+          value={edit.venue || ""}
+          onChange={(e) => setEdit({ ...edit, venue: e.target.value })}
+        />
+        <div className="flex items-center gap-2 col-span-1 md:col-span-2">
+          <input
+            className="input"
+            type="number"
+            placeholder="Nós"
+            value={edit.home_score ?? ""}
+            onChange={(e) => setEdit({ ...edit, home_score: e.target.value === "" ? null : Number(e.target.value) })}
+          />
+          <span className="text-slate-400 font-bold">×</span>
+          <input
+            className="input"
+            type="number"
+            placeholder="Eles"
+            value={edit.away_score ?? ""}
+            onChange={(e) => setEdit({ ...edit, away_score: e.target.value === "" ? null : Number(e.target.value) })}
+          />
         </div>
-        <input className="input md:col-span-2" placeholder="Observação" value={edit.notes || ""} onChange={(e) => setEdit({ ...edit, notes: e.target.value })} />
+        <input
+          className="input col-span-2"
+          placeholder="Observação"
+          value={edit.notes || ""}
+          onChange={(e) => setEdit({ ...edit, notes: e.target.value })}
+        />
       </div>
+
       <div className="mt-3 flex gap-2 flex-wrap">
         <button onClick={save} disabled={busy} className="btn-primary">Salvar</button>
         <button onClick={notify} disabled={busy} className="btn-accent">📤 Disparar webhook</button>
@@ -319,7 +458,7 @@ function SwimAdmin({
   flash: (m: string) => void;
 }) {
   const swimMod = modalities[0];
-  const phases = swimMod?.phases.split(",") || ["Eliminatória", "Semifinal", "Final"];
+  const phases = swimMod?.phases.split(",").map((p) => p.trim()) || ["Eliminatória", "Semifinal", "Final"];
   const [form, setForm] = useState<Partial<SwimEvent>>({
     modality_id: swimMod?.id,
     distance: "50m",
@@ -342,8 +481,23 @@ function SwimAdmin({
     return <div className="card p-6 text-sm text-slate-500">Nenhuma modalidade de natação cadastrada.</div>;
   }
 
+  const byDistance = useMemo(() => {
+    const order = (d: string) => {
+      const n = parseInt(d.replace(/\D/g, ""), 10);
+      return isNaN(n) ? 9999 : n;
+    };
+    const map: Record<string, SwimEvent[]> = {};
+    events.forEach((e) => {
+      const k = e.distance || "—";
+      (map[k] = map[k] || []).push(e);
+    });
+    return Object.keys(map)
+      .sort((a, b) => order(a) - order(b))
+      .map((dist) => ({ dist, events: map[dist] }));
+  }, [events]);
+
   return (
-    <div className="grid lg:grid-cols-[380px_1fr] gap-6">
+    <div className="grid lg:grid-cols-[360px_1fr] gap-6">
       <div className="card p-5 h-fit sticky top-4">
         <h3 className="font-bold mb-3">Nova prova</h3>
         <form onSubmit={submit} className="space-y-3">
@@ -386,13 +540,26 @@ function SwimAdmin({
         </form>
       </div>
 
-      <div className="space-y-3">
+      <div>
         {events.length === 0 && (
           <div className="card p-6 text-center text-sm text-slate-400">Nenhuma prova ainda.</div>
         )}
-        {events.map((e) => (
-          <SwimRow key={e.id} event={e} phases={phases} onChange={onChange} flash={flash} />
-        ))}
+        <div className="space-y-8">
+          {byDistance.map(({ dist, events: dEvents }) => (
+            <div key={dist}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="inline-block w-1 h-5 bg-brand-400 rounded-full" />
+                <h3 className="font-bold text-brand-700 uppercase tracking-wider text-sm">{dist}</h3>
+                <span className="text-xs text-slate-400 bg-slate-100 rounded-full px-2 py-0.5">{dEvents.length} prova{dEvents.length !== 1 ? "s" : ""}</span>
+              </div>
+              <div className="space-y-3">
+                {dEvents.map((e) => (
+                  <SwimRow key={e.id} event={e} phases={phases} onChange={onChange} flash={flash} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -440,11 +607,11 @@ function SwimRow({
 
   return (
     <div className="card p-4">
-      <div className="grid md:grid-cols-6 gap-2">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
         <select className="input" value={edit.distance} onChange={(e) => setEdit({ ...edit, distance: e.target.value })}>
           <option>50m</option><option>100m</option><option>400m</option><option>Revezamento 4x50 misto</option>
         </select>
-        <input className="input md:col-span-2" placeholder="Atleta" value={edit.athlete || ""} onChange={(e) => setEdit({ ...edit, athlete: e.target.value })} />
+        <input className="input col-span-1 md:col-span-2" placeholder="Atleta" value={edit.athlete || ""} onChange={(e) => setEdit({ ...edit, athlete: e.target.value })} />
         <select className="input" value={edit.phase} onChange={(e) => setEdit({ ...edit, phase: e.target.value })}>
           {phases.map((p) => <option key={p}>{p}</option>)}
         </select>
@@ -455,11 +622,11 @@ function SwimRow({
           <option value="finished">Encerrado</option>
         </select>
       </div>
-      <div className="grid md:grid-cols-6 gap-2 mt-2">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mt-2">
         <input className="input" type="date" value={edit.match_date || ""} onChange={(e) => setEdit({ ...edit, match_date: e.target.value })} />
         <input className="input" type="time" value={edit.match_time || ""} onChange={(e) => setEdit({ ...edit, match_time: e.target.value })} />
         <input className="input md:col-span-2" placeholder="Tempo (ex: 00:55.21)" value={edit.result_time || ""} onChange={(e) => setEdit({ ...edit, result_time: e.target.value })} />
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-sm col-span-1">
           <input type="checkbox" checked={!!edit.qualified} onChange={(e) => setEdit({ ...edit, qualified: e.target.checked })} />
           Classificado
         </label>
@@ -509,7 +676,7 @@ function SettingsAdmin({
     if (!form.webhook_url) return flash("Configure a URL primeiro");
     setBusy(true);
     try {
-      await api.testWebhook(form.webhook_url, "🧪 Teste da Copa Moreirão");
+      await api.testWebhook(form.webhook_url, "🧪 Teste da Copa Segue-Me");
       flash("Webhook OK ✅");
     } catch (e: any) {
       flash(`Falhou: ${e.message}`);
