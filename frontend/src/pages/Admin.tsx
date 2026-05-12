@@ -203,8 +203,8 @@ function GamesAdmin({
                 onChange={(e) => setForm({ ...form, match_date: e.target.value })}
               >
                 <option value="">Selecione</option>
-                <option value="2026-05-16">16/05/2026 (sáb)</option>
-                <option value="2026-05-17">17/05/2026 (dom)</option>
+                <option value="2026-05-16">16/05/2026</option>
+                <option value="2026-05-17">17/05/2026</option>
               </select>
             </div>
             <div>
