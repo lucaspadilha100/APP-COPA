@@ -16,7 +16,7 @@ export default function Home() {
       api.listModalities(),
       api.listGames(),
       api.listSwim(),
-      api.publicSettings().catch(() => ({})),
+      api.publicSettings().catch(() => ({} as Record<string, string>)),
     ])
       .then(([m, g, s, settings]) => {
         setModalities(m);
