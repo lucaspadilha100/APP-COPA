@@ -1,4 +1,4 @@
-import { Game } from "../lib/api";
+import { Game, Modality } from "../lib/api";
 
 const statusLabel = {
   scheduled: { cls: "badge-scheduled", text: "⏰ Agendado" },
@@ -20,10 +20,12 @@ export default function GameCard({
   game,
   teamName,
   compact = false,
+  modality,
 }: {
   game: Game;
   teamName: string;
   compact?: boolean;
+  modality?: Modality;
 }) {
   const s = statusLabel[game.status];
   const showScore = game.home_score !== null && game.away_score !== null;
@@ -43,6 +45,12 @@ export default function GameCard({
 
   return (
     <div className={`card p-4 ${compact ? "" : "md:p-5"} ${resultBg}`}>
+      {modality && (
+        <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold text-slate-600">
+          <span className="text-base leading-none">{modality.icon}</span>
+          <span>{modality.name}</span>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-bold uppercase tracking-wider text-brand-700">{game.phase}</span>
         <span className={s.cls}>{s.text}</span>

@@ -67,7 +67,7 @@ export default function Home() {
           </h2>
           <div className="grid md:grid-cols-3 gap-4">
             {next.map((g) => (
-              <GameCard key={g.id} game={g} teamName={teamName} compact />
+              <GameCard key={g.id} game={g} teamName={teamName} compact modality={modalities.find((m) => m.id === g.modality_id)} />
             ))}
           </div>
         </section>
@@ -81,7 +81,7 @@ export default function Home() {
           </h2>
           <div className="grid md:grid-cols-3 gap-4">
             {lastResults.map((g) => (
-              <GameCard key={g.id} game={g} teamName={teamName} compact />
+              <GameCard key={g.id} game={g} teamName={teamName} compact modality={modalities.find((m) => m.id === g.modality_id)} />
             ))}
           </div>
         </section>
