@@ -806,6 +806,59 @@ function SettingsAdmin({
       </div>
 
       <div className="card p-5">
+        <h3 className="font-bold mb-2">Grupos do WhatsApp</h3>
+        <p className="text-xs text-slate-500 mb-3">
+          Cadastre dois grupos e selecione qual está ativo. A mensagem será enviada apenas para o grupo ativo.
+        </p>
+
+        <div className="mb-4">
+          <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Grupo ativo</label>
+          <div className="flex gap-2 mt-1">
+            <select
+              className="input"
+              value={form.active_group || "1"}
+              onChange={(e) => setForm({ ...form, active_group: e.target.value })}
+            >
+              <option value="1">{form.group1_label || "Grupo 1"}</option>
+              <option value="2">{form.group2_label || "Grupo 2"}</option>
+            </select>
+            <button onClick={() => save("active_group")} disabled={busy} className="btn-primary">Salvar</button>
+          </div>
+        </div>
+
+        {([1, 2] as const).map((n) => (
+          <div key={n} className="mb-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+            <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">
+              Grupo {n} {String(form.active_group || "1") === String(n) && <span className="text-emerald-600">(ativo)</span>}
+            </div>
+            <div className="grid gap-2 md:grid-cols-[1fr_2fr_auto]">
+              <input
+                className="input"
+                placeholder="Nome amigável"
+                value={form[`group${n}_label`] || ""}
+                onChange={(e) => setForm({ ...form, [`group${n}_label`]: e.target.value })}
+              />
+              <input
+                className="input font-mono text-xs"
+                placeholder="120363xxxxxxxxx@g.us"
+                value={form[`group${n}_jid`] || ""}
+                onChange={(e) => setForm({ ...form, [`group${n}_jid`]: e.target.value })}
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => { await save(`group${n}_label`); await save(`group${n}_jid`); }}
+                  disabled={busy}
+                  className="btn-primary"
+                >
+                  Salvar
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="card p-5">
         <h3 className="font-bold mb-2">Template da mensagem (jogos)</h3>
         <p className="text-xs text-slate-500 mb-2">
           Placeholders: <code>{`{modalidade}`}</code> <code>{`{fase}`}</code> <code>{`{data}`}</code> <code>{`{horario}`}</code> <code>{`{adversario}`}</code> <code>{`{placar_nos}`}</code> <code>{`{placar_eles}`}</code> <code>{`{status}`}</code> <code>{`{status_emoji}`}</code> <code>{`{local}`}</code> <code>{`{time_casa}`}</code> <code>{`{notas}`}</code>

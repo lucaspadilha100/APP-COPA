@@ -15,6 +15,11 @@ DEFAULT_MODALITIES = [
 DEFAULT_SETTINGS = {
     "team_name": "São Mateus Moreira",
     "webhook_url": "",
+    "group1_label": "Grupo 1",
+    "group1_jid": "",
+    "group2_label": "Grupo 2",
+    "group2_jid": "",
+    "active_group": "1",
     "message_template": (
         "🏆 *Copa São Mateus Moreira*\n"
         "*{modalidade}* — {fase}\n"

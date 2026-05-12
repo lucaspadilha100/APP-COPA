@@ -85,8 +85,17 @@ def notify_swim(event_id: int, db: Session = Depends(get_db)):
         tempo=e.result_time or "—",
         classificacao=classificacao,
     )
+
+    active = _get_setting(db, "active_group", "1") or "1"
+    group_jid = _get_setting(db, f"group{active}_jid", "")
+    group_label = _get_setting(db, f"group{active}_label", f"Grupo {active}")
+    if not group_jid:
+        raise HTTPException(400, f"JID do {group_label} não configurado")
+
     payload = {
         "message": message,
+        "group_jid": group_jid,
+        "group_label": group_label,
         "swim": {
             "id": e.id,
             "modality": modality.name,

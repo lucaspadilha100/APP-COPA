@@ -10,7 +10,16 @@ from ..schemas import SettingItem, WebhookTestPayload
 router = APIRouter(prefix="/settings", tags=["settings"])
 
 PUBLIC_KEYS = {"team_name"}
-ADMIN_KEYS = {"webhook_url", "message_template", "swim_message_template"}
+ADMIN_KEYS = {
+    "webhook_url",
+    "message_template",
+    "swim_message_template",
+    "group1_label",
+    "group1_jid",
+    "group2_label",
+    "group2_jid",
+    "active_group",
+}
 
 
 @router.get("/public")
