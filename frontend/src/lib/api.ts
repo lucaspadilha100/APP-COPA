@@ -78,6 +78,13 @@ export interface SwimEvent {
   notified_at: string | null;
 }
 
+export interface HomeBundle {
+  modalities: Modality[];
+  games: Game[];
+  swim: SwimEvent[];
+  settings: Record<string, string>;
+}
+
 export const api = {
   login: (username: string, password: string) =>
     request<{ access_token: string }>("/api/auth/login", {
@@ -86,6 +93,7 @@ export const api = {
     }),
   me: () => request<{ username: string }>("/api/auth/me", {}, true),
 
+  home: () => request<HomeBundle>("/api/home"),
   publicSettings: () => request<Record<string, string>>("/api/settings/public"),
   allSettings: () => request<Record<string, string>>("/api/settings", {}, true),
   setSetting: (key: string, value: string) =>

@@ -12,17 +12,13 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      api.listModalities(),
-      api.listGames(),
-      api.listSwim(),
-      api.publicSettings().catch(() => ({} as Record<string, string>)),
-    ])
-      .then(([m, g, s, settings]) => {
-        setModalities(m);
-        setGames(g);
-        setSwim(s);
-        if (settings.team_name) setTeamName(settings.team_name);
+    api
+      .home()
+      .then((bundle) => {
+        setModalities(bundle.modalities);
+        setGames(bundle.games);
+        setSwim(bundle.swim);
+        if (bundle.settings?.team_name) setTeamName(bundle.settings.team_name);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -54,7 +50,34 @@ export default function Home() {
   const filteredMods = activeMod === "all" ? modalities : modalities.filter((m) => m.id === activeMod);
 
   if (loading) {
-    return <div className="text-center py-20 text-slate-500">Carregando...</div>;
+    return (
+      <div className="space-y-10 animate-pulse">
+        <section>
+          <div className="h-6 w-40 bg-slate-200 rounded mb-4" />
+          <div className="grid md:grid-cols-3 gap-4">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="card p-4 space-y-3">
+                <div className="h-3 w-24 bg-slate-200 rounded" />
+                <div className="h-8 w-full bg-slate-200 rounded" />
+                <div className="h-3 w-32 bg-slate-200 rounded" />
+              </div>
+            ))}
+          </div>
+        </section>
+        <section>
+          <div className="h-6 w-40 bg-slate-200 rounded mb-4" />
+          <div className="grid md:grid-cols-2 gap-4">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="card p-4 space-y-3">
+                <div className="h-3 w-20 bg-slate-200 rounded" />
+                <div className="h-6 w-3/4 bg-slate-200 rounded" />
+                <div className="h-3 w-1/2 bg-slate-200 rounded" />
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    );
   }
 
   return (
