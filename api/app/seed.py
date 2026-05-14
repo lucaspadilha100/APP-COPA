@@ -29,7 +29,8 @@ DEFAULT_SETTINGS = {
     ),
     "swim_message_template": (
         "🏊 *Copa São Mateus Moreira* — Natação\n"
-        "*{distancia}* — {fase} {bateria}\n"
+        "🏅 *Prova:* {distancia}\n"
+        "*{fase}* {bateria}\n"
         "🗓 {data} às {horario}\n"
         "Atleta: *{atleta}*\n"
         "Tempo: *{tempo}*\n"
