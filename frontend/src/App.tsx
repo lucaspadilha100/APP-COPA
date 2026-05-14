@@ -10,10 +10,10 @@ export default function App() {
     <div className="min-h-full flex flex-col">
       <header className="relative overflow-hidden">
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-30"
+          className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: "url('/moreirao.png')" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-900/90 via-brand-800/85 to-brand-700/90" />
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-900/35 via-brand-900/20 to-brand-900/45" />
         <div className="relative max-w-6xl mx-auto px-4 py-5 flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-3">
             <img
