@@ -1,26 +1,54 @@
 import { useEffect, useMemo, useState } from "react";
-import { api, Game, Modality, SwimEvent } from "../lib/api";
+import { api, Game, HomeBundle, Modality, SwimEvent } from "../lib/api";
 import GameCard from "../components/GameCard";
 import SwimCard from "../components/SwimCard";
 
+const CACHE_KEY = "copa_home_v1";
+
+function readCache(): HomeBundle | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as HomeBundle;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(b: HomeBundle) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(b));
+  } catch {}
+}
+
 export default function Home() {
-  const [modalities, setModalities] = useState<Modality[]>([]);
-  const [games, setGames] = useState<Game[]>([]);
-  const [swim, setSwim] = useState<SwimEvent[]>([]);
-  const [teamName, setTeamName] = useState("São Mateus Moreira");
+  const cached = useMemo(() => readCache(), []);
+  const [modalities, setModalities] = useState<Modality[]>(cached?.modalities || []);
+  const [games, setGames] = useState<Game[]>(cached?.games || []);
+  const [swim, setSwim] = useState<SwimEvent[]>(cached?.swim || []);
+  const [teamName, setTeamName] = useState(cached?.settings?.team_name || "São Mateus Moreira");
   const [activeMod, setActiveMod] = useState<number | "all">("all");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!cached);
+  const [refreshing, setRefreshing] = useState(!!cached);
 
   useEffect(() => {
-    api
-      .home()
+    const prefetched = (window as any).__homePrefetch as Promise<HomeBundle | null> | undefined;
+    const fetcher = prefetched
+      ? prefetched.then((b) => b || api.home())
+      : api.home();
+    fetcher
       .then((bundle) => {
         setModalities(bundle.modalities);
         setGames(bundle.games);
         setSwim(bundle.swim);
         if (bundle.settings?.team_name) setTeamName(bundle.settings.team_name);
+        writeCache(bundle);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        setRefreshing(false);
+        (window as any).__homePrefetch = undefined;
+      });
   }, []);
 
   const next = useMemo(() => {
@@ -82,6 +110,12 @@ export default function Home() {
 
   return (
     <div className="space-y-10">
+      {refreshing && (
+        <div className="text-xs text-slate-400 -mt-4 flex items-center gap-2">
+          <span className="inline-block w-1.5 h-1.5 bg-brand-500 rounded-full animate-pulse" />
+          Atualizando…
+        </div>
+      )}
       {next.length > 0 && (
         <section>
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">

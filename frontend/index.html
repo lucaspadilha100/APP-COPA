@@ -13,6 +13,13 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Fire /api/home request as early as possible (before React mounts)
+      // so backend cold-start happens in parallel with bundle download/parse.
+      try {
+        window.__homePrefetch = fetch("/api/home").then((r) => r.ok ? r.json() : null).catch(() => null);
+      } catch {}
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
