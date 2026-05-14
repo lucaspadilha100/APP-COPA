@@ -10,16 +10,16 @@ export default function App() {
     <div className="min-h-full flex flex-col">
       <header className="relative overflow-hidden">
         <div
-          className="absolute inset-0 bg-cover bg-center"
+          className="absolute inset-0 bg-cover bg-center opacity-30"
           style={{ backgroundImage: "url('/moreirao.png')" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-900/85 via-brand-800/80 to-brand-700/90" />
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-900/90 via-brand-800/85 to-brand-700/90" />
         <div className="relative max-w-6xl mx-auto px-4 py-5 flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-3">
             <img
               src="/brasao.png"
               alt="Paróquia São Mateus Moreira"
-              className="h-12 w-12 rounded-full bg-white/10 ring-2 ring-white/30 object-contain p-0.5"
+              className="h-14 w-14 rounded-full bg-white/10 ring-2 ring-white/30 object-contain p-0.5"
               onError={(e) => ((e.currentTarget.style.display = "none"))}
             />
             <div className="text-white">
@@ -32,12 +32,6 @@ export default function App() {
             </div>
           </Link>
           <div className="flex items-center gap-2">
-            <img
-              src="/segue-me.png"
-              alt="Segue-Me"
-              className="hidden sm:block h-12 w-12 rounded-full object-cover ring-2 ring-gold-400/60"
-              onError={(e) => ((e.currentTarget.style.display = "none"))}
-            />
             {token ? (
               <>
                 <Link to="/admin" className="btn-accent">Admin</Link>
