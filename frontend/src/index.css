@@ -49,3 +49,22 @@
   .badge-live { @apply badge bg-crimson-100 text-crimson-700 ring-1 ring-crimson-300; }
   .badge-finished { @apply badge bg-brand-100 text-brand-800; }
 }
+
+@keyframes sharePulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.55), 0 4px 14px -4px rgba(245, 158, 11, 0.45);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(245, 158, 11, 0), 0 6px 18px -4px rgba(245, 158, 11, 0.55);
+    transform: scale(1.015);
+  }
+}
+
+.share-pulse {
+  animation: sharePulse 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .share-pulse { animation: none; }
+}
