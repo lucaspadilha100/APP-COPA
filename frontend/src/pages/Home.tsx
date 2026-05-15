@@ -228,7 +228,7 @@ export default function Home() {
                 ) : (
                   <div className="grid md:grid-cols-2 gap-4">
                     {mGames.map((g) => (
-                      <GameCard key={g.id} game={g} teamName={teamName} />
+                      <GameCard key={g.id} game={g} teamName={teamName} modality={m} />
                     ))}
                   </div>
                 )}
