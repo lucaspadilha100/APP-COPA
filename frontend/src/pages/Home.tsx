@@ -34,23 +34,48 @@ export default function Home() {
   const [refreshing, setRefreshing] = useState(!!cached);
 
   useEffect(() => {
-    const prefetched = (window as any).__homePrefetch as Promise<HomeBundle | null> | undefined;
-    const fetcher = prefetched
-      ? prefetched.then((b) => b || api.home())
-      : api.home();
-    fetcher
-      .then((bundle) => {
+    let cancelled = false;
+    let lastFetch = 0;
+
+    async function loadHome(useFresh: boolean) {
+      if (cancelled) return;
+      const prefetched = !useFresh
+        ? ((window as any).__homePrefetch as Promise<HomeBundle | null> | undefined)
+        : undefined;
+      const fetcher = prefetched ? prefetched.then((b) => b || api.home()) : api.home();
+      try {
+        const bundle = await fetcher;
+        if (cancelled) return;
         setModalities(bundle.modalities);
         setGames(bundle.games);
         setSwim(bundle.swim);
         if (bundle.settings?.team_name) setTeamName(bundle.settings.team_name);
         writeCache(bundle);
-      })
-      .finally(() => {
-        setLoading(false);
-        setRefreshing(false);
-        (window as any).__homePrefetch = undefined;
-      });
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+          setRefreshing(false);
+          (window as any).__homePrefetch = undefined;
+          lastFetch = Date.now();
+        }
+      }
+    }
+
+    loadHome(false);
+
+    function onVisible() {
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - lastFetch < 5000) return;
+      setRefreshing(true);
+      loadHome(true);
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
   }, []);
 
   const next = useMemo(() => {
