@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Game, Modality } from "../lib/api";
+import { renderShareImage, shareOrDownload } from "../lib/shareRender";
 
 const statusLabel = {
   scheduled: { cls: "badge-scheduled", text: "⏰ Agendado" },
@@ -27,8 +29,23 @@ export default function GameCard({
   compact?: boolean;
   modality?: Modality;
 }) {
+  const [sharing, setSharing] = useState(false);
   const s = statusLabel[game.status];
   const showScore = game.home_score !== null && game.away_score !== null;
+
+  async function share() {
+    setSharing(true);
+    try {
+      const blob = await renderShareImage(game, modality, teamName);
+      const slug = (modality?.name || "jogo").toLowerCase().replace(/\s+/g, "-");
+      await shareOrDownload(blob, `copa-${slug}-${game.id}.png`);
+    } catch (e) {
+      console.error(e);
+      alert("Não foi possível gerar a imagem. Tente novamente.");
+    } finally {
+      setSharing(false);
+    }
+  }
   const we = game.home_score ?? 0;
   const them = game.away_score ?? 0;
   const win = showScore && we > them;
@@ -77,10 +94,18 @@ export default function GameCard({
           <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Adversário</div>
         </div>
       </div>
-      <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-600">
+      <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-600">
         <span>📅 {formatDate(game.match_date)}</span>
         {game.match_time && <span>🕒 {game.match_time}</span>}
         {game.venue && <span>📍 {game.venue}</span>}
+        <button
+          onClick={share}
+          disabled={sharing}
+          className="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded-full bg-brand-50 text-brand-700 hover:bg-brand-100 font-semibold disabled:opacity-50"
+          title="Compartilhar"
+        >
+          {sharing ? "Gerando..." : "📤 Compartilhar"}
+        </button>
       </div>
       {game.notes && <div className="mt-2 text-xs text-slate-500 italic">{game.notes}</div>}
     </div>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api, Game, HomeBundle, Modality, SwimEvent } from "../lib/api";
 import GameCard from "../components/GameCard";
 import SwimCard from "../components/SwimCard";
+import NextGameBanner from "../components/NextGameBanner";
 
 const CACHE_KEY = "copa_home_v1";
 
@@ -116,6 +117,7 @@ export default function Home() {
           Atualizando…
         </div>
       )}
+      <NextGameBanner games={games} modalities={modalities} teamName={teamName} />
       {next.length > 0 && (
         <section>
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
