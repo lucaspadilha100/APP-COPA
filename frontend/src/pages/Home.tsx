@@ -63,18 +63,21 @@ export default function Home() {
 
     loadHome(false);
 
-    function onVisible() {
+    function tryRefresh() {
+      if (cancelled) return;
       if (document.visibilityState !== "visible") return;
       if (Date.now() - lastFetch < 5000) return;
       setRefreshing(true);
       loadHome(true);
     }
-    document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("focus", onVisible);
+    document.addEventListener("visibilitychange", tryRefresh);
+    window.addEventListener("focus", tryRefresh);
+    const pollId = window.setInterval(tryRefresh, 30000);
     return () => {
       cancelled = true;
-      document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("focus", onVisible);
+      document.removeEventListener("visibilitychange", tryRefresh);
+      window.removeEventListener("focus", tryRefresh);
+      window.clearInterval(pollId);
     };
   }, []);
 
