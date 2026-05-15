@@ -303,24 +303,28 @@ function GameRow({
   const statusColor =
     game.status === "finished"
       ? "border-l-4 border-l-emerald-400"
-      : game.status === "live"
-      ? "border-l-4 border-l-red-400"
       : "border-l-4 border-l-slate-200";
 
   async function save() {
     setBusy(true);
     try {
+      const home = edit.home_score === ("" as any) ? null : edit.home_score;
+      const away = edit.away_score === ("" as any) ? null : edit.away_score;
+      const hasResult = home !== null && home !== undefined && away !== null && away !== undefined;
       await api.updateGame(game.id, {
         phase: edit.phase,
         opponent: edit.opponent,
         match_date: edit.match_date,
         match_time: edit.match_time,
         venue: edit.venue,
-        home_score: edit.home_score === ("" as any) ? null : edit.home_score,
-        away_score: edit.away_score === ("" as any) ? null : edit.away_score,
-        status: edit.status,
+        home_score: home,
+        away_score: away,
+        status: hasResult ? "finished" : edit.status,
         notes: edit.notes,
       });
+      if (hasResult && edit.status !== "finished") {
+        setEdit({ ...edit, status: "finished" });
+      }
       flash("Salvo!");
       await onChange();
     } finally {
@@ -377,7 +381,6 @@ function GameRow({
           </select>
           <select className="input" value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value as any })}>
             <option value="scheduled">Agendado</option>
-            <option value="live">Ao vivo</option>
             <option value="finished">Encerrado</option>
           </select>
         </div>
@@ -410,7 +413,6 @@ function GameRow({
           <input className="input" type="time" value={edit.match_time || ""} onChange={(e) => setEdit({ ...edit, match_time: e.target.value })} />
           <select className="input" value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value as any })}>
             <option value="scheduled">Agendado</option>
-            <option value="live">Ao vivo</option>
             <option value="finished">Encerrado</option>
           </select>
         </div>
@@ -614,7 +616,12 @@ function SwimRow({
   async function save() {
     setBusy(true);
     try {
-      await api.updateSwim(event.id, edit);
+      const hasResult = !!(edit.result_time && edit.result_time.trim());
+      const payload = { ...edit, status: hasResult ? "finished" : edit.status } as Partial<SwimEvent>;
+      await api.updateSwim(event.id, payload);
+      if (hasResult && edit.status !== "finished") {
+        setEdit({ ...edit, status: "finished" });
+      }
       flash("Salvo!");
       await onChange();
     } finally { setBusy(false); }
@@ -640,8 +647,6 @@ function SwimRow({
   const statusColor =
     event.status === "finished"
       ? "border-l-4 border-l-emerald-400"
-      : event.status === "live"
-      ? "border-l-4 border-l-red-400"
       : "border-l-4 border-l-slate-200";
 
   return (
@@ -654,7 +659,6 @@ function SwimRow({
           </select>
           <select className="input min-w-0" value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value as any })}>
             <option value="scheduled">Agendado</option>
-            <option value="live">Ao vivo</option>
             <option value="finished">Encerrado</option>
           </select>
         </div>
@@ -698,7 +702,6 @@ function SwimRow({
           </select>
           <select className="input" value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value as any })}>
             <option value="scheduled">Agendado</option>
-            <option value="live">Ao vivo</option>
             <option value="finished">Encerrado</option>
           </select>
         </div>

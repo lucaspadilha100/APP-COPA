@@ -6,7 +6,6 @@ const SHARE_USED_KEY = "copa:share_used";
 
 const statusLabel = {
   scheduled: { cls: "badge-scheduled", text: "⏰ Agendado" },
-  live: { cls: "badge-live", text: "🔴 Ao vivo" },
   finished: { cls: "badge-finished", text: "✅ Encerrado" },
 };
 

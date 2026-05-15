@@ -32,7 +32,7 @@ class Game(Base):
     venue = Column(String, nullable=True)
     home_score = Column(Integer, nullable=True)
     away_score = Column(Integer, nullable=True)
-    status = Column(String, default="scheduled")  # scheduled | live | finished
+    status = Column(String, default="scheduled")  # scheduled | finished
     notes = Column(Text, nullable=True)
     notified_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
