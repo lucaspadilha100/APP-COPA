@@ -129,7 +129,7 @@ export default function GameCard({
       <button
         onClick={share}
         disabled={sharing}
-        className={`mt-3 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-gold-500 to-gold-600 text-white text-sm font-bold shadow-sm hover:from-gold-600 hover:to-gold-700 active:scale-[0.99] transition disabled:opacity-60 disabled:cursor-not-allowed ${!shareUsed && !sharing ? "share-pulse" : ""}`}
+        className={`mt-3 w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gold-500 text-white text-sm font-semibold hover:bg-gold-600 active:scale-[0.99] transition disabled:opacity-60 disabled:cursor-not-allowed ${!shareUsed && !sharing ? "share-pulse" : ""}`}
         title="Compartilhar nos Stories"
       >
         {sharing ? "Gerando..." : "📲 Compartilhar nos Stories"}
