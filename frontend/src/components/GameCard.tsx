@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Game, Modality } from "../lib/api";
 import { renderShareImage, shareOrDownload } from "../lib/shareRender";
+
+const SHARE_USED_KEY = "copa:share_used";
 
 const statusLabel = {
   scheduled: { cls: "badge-scheduled", text: "⏰ Agendado" },
@@ -30,8 +32,27 @@ export default function GameCard({
   modality?: Modality;
 }) {
   const [sharing, setSharing] = useState(false);
+  const [shareUsed, setShareUsed] = useState(true);
   const s = statusLabel[game.status];
   const showScore = game.home_score !== null && game.away_score !== null;
+
+  useEffect(() => {
+    try {
+      setShareUsed(localStorage.getItem(SHARE_USED_KEY) === "1");
+    } catch {
+      setShareUsed(true);
+    }
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === SHARE_USED_KEY) setShareUsed(e.newValue === "1");
+    };
+    const onCustom = () => setShareUsed(true);
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("copa:share-used", onCustom);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("copa:share-used", onCustom);
+    };
+  }, []);
 
   async function share() {
     setSharing(true);
@@ -39,6 +60,11 @@ export default function GameCard({
       const blob = await renderShareImage(game, modality, teamName);
       const slug = (modality?.name || "jogo").toLowerCase().replace(/\s+/g, "-");
       await shareOrDownload(blob, `copa-${slug}-${game.id}.png`);
+      try {
+        localStorage.setItem(SHARE_USED_KEY, "1");
+      } catch {}
+      setShareUsed(true);
+      window.dispatchEvent(new Event("copa:share-used"));
     } catch (e) {
       console.error(e);
       alert("Não foi possível gerar a imagem. Tente novamente.");
@@ -94,20 +120,20 @@ export default function GameCard({
           <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Adversário</div>
         </div>
       </div>
-      <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-600">
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-slate-600 text-center">
         <span>📅 {formatDate(game.match_date)}</span>
         {game.match_time && <span>🕒 {game.match_time}</span>}
         {game.venue && <span>📍 {game.venue}</span>}
-        <button
-          onClick={share}
-          disabled={sharing}
-          className="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded-full bg-brand-50 text-brand-700 hover:bg-brand-100 font-semibold disabled:opacity-50"
-          title="Compartilhar"
-        >
-          {sharing ? "Gerando..." : "📤 Compartilhar"}
-        </button>
       </div>
       {game.notes && <div className="mt-2 text-xs text-slate-500 italic">{game.notes}</div>}
+      <button
+        onClick={share}
+        disabled={sharing}
+        className={`mt-3 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-gold-500 to-gold-600 text-white text-sm font-bold shadow-sm hover:from-gold-600 hover:to-gold-700 active:scale-[0.99] transition disabled:opacity-60 disabled:cursor-not-allowed ${!shareUsed && !sharing ? "share-pulse" : ""}`}
+        title="Compartilhar nos Stories"
+      >
+        {sharing ? "Gerando..." : "📲 Compartilhar nos Stories"}
+      </button>
     </div>
   );
 }
