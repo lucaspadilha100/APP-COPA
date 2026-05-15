@@ -1,4 +1,8 @@
-import { SwimEvent } from "../lib/api";
+import { useEffect, useState } from "react";
+import { Modality, SwimEvent } from "../lib/api";
+import { renderSwimShareImage, shareOrDownload, preloadShareTemplate } from "../lib/shareRender";
+
+const SHARE_USED_KEY = "copa:share_used";
 
 const statusLabel = {
   scheduled: { cls: "badge-scheduled", text: "⏰ Agendado" },
@@ -16,9 +20,60 @@ function formatDate(d: string | null) {
   }
 }
 
-export default function SwimCard({ event }: { event: SwimEvent }) {
+export default function SwimCard({
+  event,
+  teamName,
+  modality,
+}: {
+  event: SwimEvent;
+  teamName: string;
+  modality?: Modality;
+}) {
+  const [sharing, setSharing] = useState(false);
+  const [shareUsed, setShareUsed] = useState(true);
   const s = statusLabel[event.status];
   const isFinished = event.status === "finished";
+
+  useEffect(() => {
+    preloadShareTemplate(modality);
+  }, [modality]);
+
+  useEffect(() => {
+    try {
+      setShareUsed(localStorage.getItem(SHARE_USED_KEY) === "1");
+    } catch {
+      setShareUsed(true);
+    }
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === SHARE_USED_KEY) setShareUsed(e.newValue === "1");
+    };
+    const onCustom = () => setShareUsed(true);
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("copa:share-used", onCustom);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("copa:share-used", onCustom);
+    };
+  }, []);
+
+  async function share() {
+    setSharing(true);
+    try {
+      const blob = await renderSwimShareImage(event, modality, teamName);
+      await shareOrDownload(blob, `copa-natacao-${event.id}.png`);
+      try {
+        localStorage.setItem(SHARE_USED_KEY, "1");
+      } catch {}
+      setShareUsed(true);
+      window.dispatchEvent(new Event("copa:share-used"));
+    } catch (e) {
+      console.error(e);
+      alert("Não foi possível gerar a imagem. Tente novamente.");
+    } finally {
+      setSharing(false);
+    }
+  }
+
   const resultBg = isFinished
     ? event.qualified
       ? "bg-emerald-50/80 ring-1 ring-emerald-200"
@@ -50,11 +105,21 @@ export default function SwimCard({ event }: { event: SwimEvent }) {
           )
         )}
       </div>
-      <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-600">
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-slate-600 text-center">
         <span>📅 {formatDate(event.match_date)}</span>
         {event.match_time && <span>🕒 {event.match_time}</span>}
       </div>
       {event.notes && <div className="mt-2 text-xs text-slate-500 italic">{event.notes}</div>}
+      <div className="mt-3 flex justify-center">
+        <button
+          onClick={share}
+          disabled={sharing}
+          className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gold-500 text-white text-sm font-semibold hover:bg-gold-600 active:scale-[0.99] transition disabled:opacity-60 disabled:cursor-not-allowed ${!shareUsed && !sharing ? "share-pulse" : ""}`}
+          title="Compartilhar nos Stories"
+        >
+          {sharing ? "Gerando..." : "📲 Compartilhar nos Stories"}
+        </button>
+      </div>
     </div>
   );
 }
