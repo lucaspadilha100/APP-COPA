@@ -247,16 +247,8 @@ export async function renderSwimShareImage(
   const resultText = event.result_time || "—";
   drawCenteredText(ctx, resultText, cx, H * 0.75, "900 110px Poppins, system-ui, sans-serif", "#ffffff");
 
-  // 5) Status (classificado) ou nome da equipe
-  let bottom: string;
-  let bottomColor = "#ffffff";
-  if (isFinished) {
-    bottom = event.qualified ? "🏅 CLASSIFICADO" : "❌ NÃO CLASSIFICADO";
-    bottomColor = event.qualified ? "#86efac" : "#fca5a5";
-  } else {
-    bottom = teamName.toUpperCase();
-  }
-  drawFittedTeamName(ctx, bottom, cx, H * 0.82, maxNameWidth, 50, bottomColor);
+  // 5) Nome da equipe (sempre, sem classificado — usuário escreve o que quiser na legenda)
+  drawFittedTeamName(ctx, teamName.toUpperCase(), cx, H * 0.82, maxNameWidth, 50, "#ffffff");
 
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
