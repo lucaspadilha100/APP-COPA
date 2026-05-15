@@ -32,6 +32,7 @@ export default function Home() {
   const [activeMod, setActiveMod] = useState<number | "all">("all");
   const [loading, setLoading] = useState(!cached);
   const [refreshing, setRefreshing] = useState(!!cached);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,6 +52,7 @@ export default function Home() {
         setSwim(bundle.swim);
         if (bundle.settings?.team_name) setTeamName(bundle.settings.team_name);
         writeCache(bundle);
+        setLastUpdated(new Date());
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -141,12 +143,19 @@ export default function Home() {
   return (
     <div className="space-y-10">
       <PushOptin />
-      {refreshing && (
-        <div className="text-xs text-slate-400 -mt-4 flex items-center gap-2">
-          <span className="inline-block w-1.5 h-1.5 bg-brand-500 rounded-full animate-pulse" />
-          Atualizando…
-        </div>
-      )}
+      <div className="text-xs text-slate-400 -mt-4 flex items-center gap-2 h-4">
+        {refreshing ? (
+          <>
+            <span className="inline-block w-1.5 h-1.5 bg-brand-500 rounded-full animate-pulse" />
+            Atualizando…
+          </>
+        ) : lastUpdated ? (
+          <>
+            <span className="inline-block w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+            Atualizado às {lastUpdated.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+          </>
+        ) : null}
+      </div>
       <NextGameBanner games={games} modalities={modalities} teamName={teamName} />
       {next.length > 0 && (
         <section>
