@@ -57,7 +57,7 @@ export interface Game {
   venue: string | null;
   home_score: number | null;
   away_score: number | null;
-  status: "scheduled" | "live" | "finished";
+  status: "scheduled" | "finished";
   notes: string | null;
   notified_at: string | null;
 }
@@ -73,7 +73,7 @@ export interface SwimEvent {
   match_time: string | null;
   result_time: string | null;
   qualified: boolean;
-  status: "scheduled" | "live" | "finished";
+  status: "scheduled" | "finished";
   notes: string | null;
   notified_at: string | null;
 }

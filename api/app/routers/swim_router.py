@@ -44,6 +44,8 @@ def update_swim(event_id: int, data: SwimEventUpdate, db: Session = Depends(get_
         raise HTTPException(404, "Prova não encontrada")
     for k, v in data.model_dump(exclude_unset=True).items():
         setattr(e, k, v)
+    if e.result_time and e.result_time.strip():
+        e.status = "finished"
     db.commit()
     db.refresh(e)
     return e

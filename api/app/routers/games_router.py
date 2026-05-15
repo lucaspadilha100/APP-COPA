@@ -21,7 +21,6 @@ def _get_setting(db: Session, key: str, default: str = "") -> str:
 def _format_message(template: str, game: Game, modality: Modality, team_name: str) -> str:
     status_map = {
         "scheduled": ("⏰", "Agendado"),
-        "live": ("🔴", "Ao vivo"),
         "finished": ("✅", "Encerrado"),
     }
     emoji, status_label = status_map.get(game.status, ("", game.status))
@@ -67,6 +66,8 @@ def update_game(game_id: int, data: GameUpdate, db: Session = Depends(get_db)):
         raise HTTPException(404, "Jogo não encontrado")
     for k, v in data.model_dump(exclude_unset=True).items():
         setattr(g, k, v)
+    if g.home_score is not None and g.away_score is not None:
+        g.status = "finished"
     db.commit()
     db.refresh(g)
     return g
