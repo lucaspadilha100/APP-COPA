@@ -93,7 +93,7 @@ export const api = {
     }),
   me: () => request<{ username: string }>("/api/auth/me", {}, true),
 
-  home: () => request<HomeBundle>("/api/home"),
+  home: () => request<HomeBundle>("/api/home", { cache: "no-store" }),
   publicSettings: () => request<Record<string, string>>("/api/settings/public"),
   allSettings: () => request<Record<string, string>>("/api/settings", {}, true),
   setSetting: (key: string, value: string) =>
