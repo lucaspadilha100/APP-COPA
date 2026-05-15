@@ -1,4 +1,4 @@
-import { Game, Modality } from "./api";
+import { Game, Modality, SwimEvent } from "./api";
 import { templateForModality } from "./shareTemplate";
 
 const W = 1080;
@@ -10,14 +10,30 @@ function fmtDate(d: string | null): string {
   return `${day}/${m}/${y}`;
 }
 
+const imageCache = new Map<string, Promise<HTMLImageElement>>();
+
 function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
+  const cached = imageCache.get(src);
+  if (cached) return cached;
+  const p = new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
-    img.onerror = reject;
+    img.onerror = (e) => {
+      imageCache.delete(src);
+      reject(e);
+    };
     img.src = src;
   });
+  imageCache.set(src, p);
+  return p;
+}
+
+export function preloadShareTemplate(modality: Modality | undefined): void {
+  const src = templateForModality(modality);
+  if (!imageCache.has(src)) {
+    loadImage(src).catch(() => {});
+  }
 }
 
 function drawCenteredText(
@@ -183,6 +199,64 @@ export async function renderShareImage(
 
   // 5) Adversary (auto-fit + 2 linhas se nome longo)
   drawFittedTeamName(ctx, (game.opponent || "").toUpperCase(), cx, H * 0.82, maxNameWidth, 56, "#ffffff");
+
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("Falha ao gerar imagem"));
+    }, "image/png");
+  });
+}
+
+export async function renderSwimShareImage(
+  event: SwimEvent,
+  modality: Modality | undefined,
+  teamName: string
+): Promise<Blob> {
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d")!;
+
+  const bg = await loadImage(templateForModality(modality));
+  ctx.drawImage(bg, 0, 0, W, H);
+
+  const cx = W / 2;
+
+  // 1) Modality (yellow)
+  const modName = (modality?.name || "Natação").toUpperCase();
+  drawCenteredText(ctx, modName, cx, H * 0.55, "bold 56px Poppins, system-ui, sans-serif", "#fbbf24");
+
+  // 2) Subline: distance · phase (+ heat) · date (+ time se não finalizou)
+  const isFinished = event.status === "finished";
+  const dateStr = fmtDate(event.match_date);
+  const parts = [
+    event.distance,
+    event.phase,
+    event.heat || "",
+    dateStr,
+    !isFinished && event.match_time ? event.match_time : "",
+  ].filter(Boolean);
+  drawCenteredText(ctx, parts.join(" · "), cx, H * 0.605, "500 36px Inter, system-ui, sans-serif", "#ffffff");
+
+  // 3) Athlete (auto-fit)
+  const maxNameWidth = W * 0.86;
+  drawFittedTeamName(ctx, (event.athlete || "").toUpperCase(), cx, H * 0.68, maxNameWidth, 56, "#ffffff");
+
+  // 4) Result time big, or "—"
+  const resultText = event.result_time || "—";
+  drawCenteredText(ctx, resultText, cx, H * 0.75, "900 110px Poppins, system-ui, sans-serif", "#ffffff");
+
+  // 5) Status (classificado) ou nome da equipe
+  let bottom: string;
+  let bottomColor = "#ffffff";
+  if (isFinished) {
+    bottom = event.qualified ? "🏅 CLASSIFICADO" : "❌ NÃO CLASSIFICADO";
+    bottomColor = event.qualified ? "#86efac" : "#fca5a5";
+  } else {
+    bottom = teamName.toUpperCase();
+  }
+  drawFittedTeamName(ctx, bottom, cx, H * 0.82, maxNameWidth, 50, bottomColor);
 
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {

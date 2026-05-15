@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Game, Modality } from "../lib/api";
-import { renderShareImage, shareOrDownload } from "../lib/shareRender";
+import { renderShareImage, shareOrDownload, preloadShareTemplate } from "../lib/shareRender";
 
 const SHARE_USED_KEY = "copa:share_used";
 
@@ -35,6 +35,10 @@ export default function GameCard({
   const [shareUsed, setShareUsed] = useState(true);
   const s = statusLabel[game.status];
   const showScore = game.home_score !== null && game.away_score !== null;
+
+  useEffect(() => {
+    preloadShareTemplate(modality);
+  }, [modality]);
 
   useEffect(() => {
     try {
