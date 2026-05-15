@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from ..auth import get_current_admin
 from ..database import get_db
 from ..models import AppSetting, Game, Modality
+from ..push import send_to_all as send_push_to_all
 from ..schemas import GameCreate, GameOut, GameUpdate
 
 router = APIRouter(prefix="/games", tags=["games"])
@@ -64,12 +65,23 @@ def update_game(game_id: int, data: GameUpdate, db: Session = Depends(get_db)):
     g = db.get(Game, game_id)
     if not g:
         raise HTTPException(404, "Jogo não encontrado")
+    was_finished = g.status == "finished"
     for k, v in data.model_dump(exclude_unset=True).items():
         setattr(g, k, v)
     if g.home_score is not None and g.away_score is not None:
         g.status = "finished"
     db.commit()
     db.refresh(g)
+    if g.status == "finished" and not was_finished:
+        try:
+            mod = db.get(Modality, g.modality_id)
+            team_name = _get_setting(db, "team_name", "Nossa equipe")
+            mod_label = (mod.icon + " " + mod.name) if mod and mod.icon else (mod.name if mod else "")
+            title = f"✅ Resultado · {mod_label}".strip()
+            body = f"{team_name} {g.home_score} × {g.away_score} {g.opponent}"
+            send_push_to_all(db, title, body, "/")
+        except Exception as exc:
+            print(f"[push] failed: {exc}")
     return g
 
 

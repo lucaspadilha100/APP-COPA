@@ -146,4 +146,20 @@ export const api = {
       { method: "POST" },
       true
     ),
+
+  getPushKey: () => request<{ key: string }>("/api/push/key"),
+  subscribePush: (data: {
+    endpoint: string;
+    keys: { p256dh: string; auth: string };
+    user_agent?: string;
+  }) =>
+    request<{ ok: boolean }>("/api/push/subscribe", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  unsubscribePush: (data: { endpoint: string }) =>
+    request<{ ok: boolean }>("/api/push/unsubscribe", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 };

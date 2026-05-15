@@ -3,6 +3,7 @@ import { api, Game, HomeBundle, Modality, SwimEvent } from "../lib/api";
 import GameCard from "../components/GameCard";
 import SwimCard from "../components/SwimCard";
 import NextGameBanner from "../components/NextGameBanner";
+import PushOptin from "../components/PushOptin";
 
 const CACHE_KEY = "copa_home_v1";
 
@@ -111,6 +112,7 @@ export default function Home() {
 
   return (
     <div className="space-y-10">
+      <PushOptin />
       {refreshing && (
         <div className="text-xs text-slate-400 -mt-4 flex items-center gap-2">
           <span className="inline-block w-1.5 h-1.5 bg-brand-500 rounded-full animate-pulse" />
