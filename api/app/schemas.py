@@ -123,3 +123,18 @@ class SettingItem(BaseModel):
 class WebhookTestPayload(BaseModel):
     url: str
     message: str
+
+
+class PushKeys(BaseModel):
+    p256dh: str
+    auth: str
+
+
+class PushSubscribeIn(BaseModel):
+    endpoint: str
+    keys: PushKeys
+    user_agent: Optional[str] = None
+
+
+class PushUnsubscribeIn(BaseModel):
+    endpoint: str

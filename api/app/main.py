@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .auth import ensure_default_admin
 from .config import settings
 from .database import Base, SessionLocal, engine
-from .routers import auth_router, games_router, home_router, modalities_router, settings_router, swim_router
+from .routers import auth_router, games_router, home_router, modalities_router, push_router, settings_router, swim_router
 from .seed import seed_initial_data
 
 app = FastAPI(title="Copa São Mateus Moreira API", version="1.0.0")
@@ -46,3 +46,4 @@ app.include_router(games_router.router, prefix="/api")
 app.include_router(swim_router.router, prefix="/api")
 app.include_router(settings_router.router, prefix="/api")
 app.include_router(home_router.router, prefix="/api")
+app.include_router(push_router.router, prefix="/api")

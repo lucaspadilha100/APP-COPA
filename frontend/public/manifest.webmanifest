@@ -1,0 +1,31 @@
+{
+  "name": "MM na Copa Segue-Me",
+  "short_name": "MM Copa",
+  "description": "Acompanhe a Copa Segue-Me 2026 — jogos, resultados e classificação dos atletas.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0c1936",
+  "theme_color": "#172f6a",
+  "icons": [
+    {
+      "src": "/brasao.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brasao.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brasao.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

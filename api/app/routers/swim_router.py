@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from ..auth import get_current_admin
 from ..database import get_db
 from ..models import AppSetting, Modality, SwimEvent
+from ..push import send_to_all as send_push_to_all
 from ..schemas import SwimEventCreate, SwimEventOut, SwimEventUpdate
 
 router = APIRouter(prefix="/swim", tags=["swim"])
@@ -42,12 +43,22 @@ def update_swim(event_id: int, data: SwimEventUpdate, db: Session = Depends(get_
     e = db.get(SwimEvent, event_id)
     if not e:
         raise HTTPException(404, "Prova não encontrada")
+    was_finished = e.status == "finished"
     for k, v in data.model_dump(exclude_unset=True).items():
         setattr(e, k, v)
     if e.result_time and e.result_time.strip():
         e.status = "finished"
     db.commit()
     db.refresh(e)
+    if e.status == "finished" and not was_finished:
+        try:
+            mod = db.get(Modality, e.modality_id)
+            mod_label = (mod.icon + " " + mod.name) if mod and mod.icon else (mod.name if mod else "Natação")
+            title = f"🏊 Resultado · {mod_label}".strip()
+            body = f"{e.athlete}: {e.result_time} ({e.distance})"
+            send_push_to_all(db, title, body, "/")
+        except Exception as exc:
+            print(f"[push] failed: {exc}")
     return e
 
 
