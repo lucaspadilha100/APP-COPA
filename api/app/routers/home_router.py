@@ -11,7 +11,7 @@ PUBLIC_SETTING_KEYS = {"team_name"}
 
 @router.get("")
 def home_bundle(response: Response, db: Session = Depends(get_db)):
-    response.headers["Cache-Control"] = "public, max-age=30, stale-while-revalidate=60"
+    response.headers["Cache-Control"] = "no-store"
     modalities = db.query(Modality).order_by(Modality.order, Modality.id).all()
     games = (
         db.query(Game)
