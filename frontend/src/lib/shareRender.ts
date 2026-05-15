@@ -44,6 +44,102 @@ function drawCenteredText(
   ctx.fillText(text, x, y);
 }
 
+const ABBREV: Array<[RegExp, string]> = [
+  [/\bParóquia\b/gi, "Par."],
+  [/\bParoquia\b/gi, "Par."],
+  [/\bNossa Senhora\b/gi, "N. Sra."],
+  [/\bSenhor\b/gi, "Sr."],
+  [/\bSagrado Coração\b/gi, "Sgdo. Coração"],
+  [/\bImaculada Conceição\b/gi, "Imac. Conceição"],
+  [/\bPerpétuo Socorro\b/gi, "Perp. Socorro"],
+  [/\bSanto\b/gi, "Sto."],
+  [/\bSanta\b/gi, "Sta."],
+  [/\bSão\b/gi, "S."],
+];
+
+function abbreviate(text: string): string {
+  let out = text;
+  for (const [re, sub] of ABBREV) out = out.replace(re, sub);
+  return out;
+}
+
+function splitTwoLines(text: string): [string, string] {
+  const words = text.split(/\s+/);
+  if (words.length <= 1) return [text, ""];
+  let best = 0;
+  let bestDiff = Infinity;
+  const total = text.length;
+  for (let i = 1; i < words.length; i++) {
+    const left = words.slice(0, i).join(" ").length;
+    const diff = Math.abs(left - (total - left));
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      best = i;
+    }
+  }
+  return [words.slice(0, best).join(" "), words.slice(best).join(" ")];
+}
+
+function drawFittedTeamName(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  cx: number,
+  cy: number,
+  maxWidth: number,
+  baseSize: number,
+  color: string
+) {
+  const fontFor = (px: number) => `bold ${px}px Poppins, system-ui, sans-serif`;
+  const minSize = Math.round(baseSize * 0.55);
+
+  // 1) Try a single line, shrinking down to ~80% of base
+  let size = baseSize;
+  ctx.font = fontFor(size);
+  let w = ctx.measureText(text).width;
+  const oneLineMin = Math.round(baseSize * 0.8);
+  while (w > maxWidth && size > oneLineMin) {
+    size -= 2;
+    ctx.font = fontFor(size);
+    w = ctx.measureText(text).width;
+  }
+  if (w <= maxWidth) {
+    drawCenteredText(ctx, text, cx, cy, fontFor(size), color);
+    return;
+  }
+
+  // 2) Abbreviate and try single line again
+  const abbr = abbreviate(text);
+  if (abbr !== text) {
+    size = baseSize;
+    ctx.font = fontFor(size);
+    w = ctx.measureText(abbr).width;
+    while (w > maxWidth && size > oneLineMin) {
+      size -= 2;
+      ctx.font = fontFor(size);
+      w = ctx.measureText(abbr).width;
+    }
+    if (w <= maxWidth) {
+      drawCenteredText(ctx, abbr, cx, cy, fontFor(size), color);
+      return;
+    }
+  }
+
+  // 3) Two lines (use abbreviated version), shrink to fit widest line
+  const source = abbr;
+  const [l1, l2] = splitTwoLines(source);
+  size = Math.round(baseSize * 0.82);
+  ctx.font = fontFor(size);
+  let widest = Math.max(ctx.measureText(l1).width, ctx.measureText(l2).width);
+  while (widest > maxWidth && size > minSize) {
+    size -= 2;
+    ctx.font = fontFor(size);
+    widest = Math.max(ctx.measureText(l1).width, ctx.measureText(l2).width);
+  }
+  const lineH = Math.round(size * 1.05);
+  drawCenteredText(ctx, l1, cx, cy - lineH / 2, fontFor(size), color);
+  drawCenteredText(ctx, l2, cx, cy + lineH / 2, fontFor(size), color);
+}
+
 export async function renderShareImage(
   game: Game,
   modality: Modality | undefined,
@@ -73,8 +169,9 @@ export async function renderShareImage(
     : `${game.phase} · ${dateStr}${game.match_time ? ` · ${game.match_time}` : ""}`;
   drawCenteredText(ctx, subline, cx, H * 0.605, "500 36px Inter, system-ui, sans-serif", "#ffffff");
 
-  // 3) Team name
-  drawCenteredText(ctx, teamName.toUpperCase(), cx, H * 0.68, "bold 56px Poppins, system-ui, sans-serif", "#ffffff");
+  // 3) Team name (auto-fit + 2 linhas se nome longo)
+  const maxNameWidth = W * 0.86;
+  drawFittedTeamName(ctx, teamName.toUpperCase(), cx, H * 0.68, maxNameWidth, 56, "#ffffff");
 
   // 4) Score (big) or "vs"
   if (hasScore) {
@@ -84,8 +181,8 @@ export async function renderShareImage(
     drawCenteredText(ctx, "×", cx, H * 0.75, "900 90px Poppins, system-ui, sans-serif", "#ffffff");
   }
 
-  // 5) Adversary
-  drawCenteredText(ctx, (game.opponent || "").toUpperCase(), cx, H * 0.82, "bold 56px Poppins, system-ui, sans-serif", "#ffffff");
+  // 5) Adversary (auto-fit + 2 linhas se nome longo)
+  drawFittedTeamName(ctx, (game.opponent || "").toUpperCase(), cx, H * 0.82, maxNameWidth, 56, "#ffffff");
 
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
@@ -98,14 +195,25 @@ export async function renderShareImage(
 export async function shareOrDownload(blob: Blob, filename: string) {
   const file = new File([blob], filename, { type: "image/png" });
   const nav = navigator as any;
-  if (nav.canShare && nav.canShare({ files: [file] })) {
+
+  const canShareFiles =
+    typeof nav.canShare === "function" && nav.canShare({ files: [file] });
+
+  if (canShareFiles || typeof nav.share === "function") {
     try {
-      await nav.share({ files: [file], title: "Copa Segue-Me 2026" });
+      await nav.share({
+        files: [file],
+        title: "Copa Segue-Me 2026",
+        text: "Copa Segue-Me 2026",
+      });
       return;
-    } catch {
-      // user cancelled or share failed → fallback to download
+    } catch (err: any) {
+      // AbortError = user cancelled, não cair no download
+      if (err && (err.name === "AbortError" || err.code === 20)) return;
+      // outros erros (NotAllowedError em http, etc) → cai para download
     }
   }
+
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
